@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>iPhone Interactive Simulator</title>
+  <style>
+    :root {
+      --wallpaper: linear-gradient(160deg, #0b3b2c 0%, #051c15 55%, #020806 100%);
+      --accent: #0a84ff;
+      --green: #30d158;
+      --red: #ff453a;
+      --orange: #ff9f0a;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      background: #0d0f14;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    .iphone-chassis {
+      width: 100%;
+      max-width: 398px;
+      height: 820px;
+      max-height: 94vh;
+      background: linear-gradient(145deg, #2c2f36, #14161a);
+      border-radius: 54px;
+      padding: 11px;
+      box-shadow: 0 0 0 2px #4a4e58, 0 25px 60px rgba(0, 0, 0, 0.85);
+      position: relative;
+      display: flex;
+    }
+    .side-btn {
+      position: absolute;
+      background: #3a3e47;
+      border-radius: 3px;
+    }
+    .btn-mute { left: -4px; top: 115px; width: 3px; height: 26px; }
+    .btn-vol-up { left: -4px; top: 160px; width: 3px; height: 48px; }
+    .btn-vol-down { left: -4px; top: 220px; width: 3px; height: 48px; }
+    .btn-power { right: -4px; top: 185px; width: 3px; height: 74px; cursor: pointer; }
+
+    .screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 43px;
+      background: var(--wallpaper);
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+    }
+    .status-bar {
+      height: 46px;
+      padding: 10px 22px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 70;
+    }
+    .status-zone { padding: 4px 6px; cursor: pointer; border-radius: 8px; }
+    .dynamic-island {
+      width: 114px;
+      height: 30px;
+      background: #000;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .dynamic-island.expanded { width: 240px; height: 44px; }
+    .camera-lens {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #1d3557;
+    }
+
+    .control-center, .notif-drawer {
+      position: absolute;
+      inset: 0;
+      background: rgba(12, 14, 18, 0.85);
+      backdrop-filter: blur(25px);
+      z-index: 65;
+      padding: 58px 20px 28px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .control-center.open, .notif-drawer.open { display: flex; }
+    .cc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .cc-card { background: rgba(255, 255, 255, 0.12); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .cc-toggles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .cc-circle {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.14); border: none;
+      color: #fff; font-size: 19px; cursor: pointer; margin: auto;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cc-circle.active { background: var(--accent); }
+    .cc-circle.active-green { background: var(--green); }
+    .cc-circle.active-orange { background: var(--orange); }
+    .cc-slider-box {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 20px; padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .cc-slider-box input[type="range"] { flex: 1; accent-color: #fff; }
+
+    .lock-screen {
+      position: absolute; inset: 0; padding: 56px 18px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 50; background: inherit;
+      transition: transform 0.45s ease, opacity 0.35s ease;
+    }
+    .lock-screen.unlocked { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+    .lock-date { font-size: 18px; font-weight: 500; opacity: 0.92; margin-top: 6px; }
+    .lock-time { font-size: 80px; font-weight: 700; letter-spacing: -2px; line-height: 1.05; margin-bottom: 24px; }
+    .notif-list { width: 100%; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; margin-bottom: auto; }
+    .notif-card {
+      background: rgba(255, 255, 255, 0.17); backdrop-filter: blur(20px);
+      border-radius: 20px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px; cursor: pointer;
+    }
+    .notif-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+    .notif-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .notif-text p { font-size: 13px; opacity: 0.88; }
+    .lock-actions { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 12px; }
+    .lock-round-btn { width: 46px; height: 46px; border-radius: 50%; background: rgba(0, 0, 0, 0.45); border: none; color: #fff; font-size: 20px; cursor: pointer; }
+    .unlock-pill {
+      background: rgba(255, 255, 255, 0.24); border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #fff; padding: 10px 24px; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    .home-screen { flex: 1; padding: 12px 18px 98px; display: flex; flex-direction: column; gap: 16px; z-index: 10; overflow-y: auto; }
+    .widget-card { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(18px); border-radius: 24px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .widget-card h3 { font-size: 16px; font-weight: 700; }
+    .widget-card p { font-size: 12.5px; opacity: 0.86; margin-top: 2px; }
+    .apps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+    .app-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+    .app-icon { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32); }
+    .app-name { font-size: 11.5px; font-weight: 500; text-align: center; }
+
+    .dock {
+      position: absolute; bottom: 24px; left: 14px; right: 14px; height: 78px;
+      background: rgba(255, 255, 255, 0.22); backdrop-filter: blur(25px);
+      border-radius: 28px; display: flex; justify-content: space-around; align-items: center; padding: 0 8px; z-index: 20;
+    }
+    .home-bar-zone { position: absolute; bottom: 0; left: 0; right: 0; height: 22px; display: flex; align-items: center; justify-content: center; z-index: 80; cursor: pointer; }
+    .home-bar { width: 136px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.82); }
+
+    .app-window { position: absolute; inset: 46px 0 0; background: #121418; z-index: 40; display: none; flex-direction: column; padding: 16px 16px 30px; gap: 12px; overflow-y: auto; }
+    .app-window.open { display: flex; }
+    .app-topbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+    .pill-btn { background: rgba(255, 255, 255, 0.14); border: none; color: #fff; padding: 6px 14px; border-radius: 16px; font-size: 13px; cursor: pointer; }
+    .panel { background: rgba(255, 255, 255, 0.07); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .field { width: 100%; background: rgba(0, 0, 0, 0.38); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; }
+    .action-btn { background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .list-row { background: rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .photos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .photo-tile { border-radius: 14px; overflow: hidden; background: #1e2128; position: relative; aspect-ratio: 1 / 1; }
+    .photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-del { position: absolute; top: 6px; left: 6px; background: rgba(0, 0, 0, 0.65); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; }
+    .chat-bubble { max-width: 80%; padding: 9px 13px; border-radius: 16px; font-size: 13.5px; line-height: 1.4; }
+    .chat-me { background: var(--accent); align-self: flex-start; border-bottom-right-radius: 4px; }
+    .chat-them { background: rgba(255, 255, 255, 0.14); align-self: flex-end; border-bottom-left-radius: 4px; }
+    .brightness-overlay { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 90; }
+  </style>
+</head>
+<body>
+  <div class="iphone-chassis">
+    <div class="side-btn btn-mute"></div>
+    <div class="side-btn btn-vol-up"></div>
+    <div class="side-btn btn-vol-down"></div>
+    <div class="side-btn btn-power" onclick="lockDevice()" title="زر القفل"></div>
+    <div class="screen" id="screen">
+      <div class="brightness-overlay" id="brightnessOverlay"></div>
+      <div class="status-bar">
+        <span class="status-zone" id="statusTime" onclick="toggleNotifDrawer()">9:41</span>
+        <div class="dynamic-island" id="dynamicIsland" onclick="toggleIsland()">
+          <div class="camera-lens"></div>
+          <span id="islandLabel" style="font-size: 11px; opacity: 0.9;">آيفون جاهز</span>
+        </div>
+        <span class="status-zone" onclick="toggleControlCenter()">5G 🔋</span>
+      </div>
+      <div class="control-center" id="controlCenter">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3>مركز التحكم</h3>
+          <button class="pill-btn" onclick="toggleControlCenter()">تم</button>
+        </div>
+        <div class="cc-grid">
+          <div class="cc-card">
+            <div class="cc-toggles">
+              <button class="cc-circle active" id="btnWifi" onclick="this.classList.toggle('active')">📶</button>
+              <button class="cc-circle active" id="btnBt" onclick="this.classList.toggle('active')">💠</button>
+              <button class="cc-circle active-green" id="btnData" onclick="this.classList.toggle('active-green')">📡</button>
+              <button class="cc-circle" id="btnAir" onclick="this.classList.toggle('active-orange')">✈️</button>
+            </div>
+          </div>
+          <div class="cc-card" style="justify-content:center;align-items:center;text-align:center;">
+            <span style="font-size:24px;">🎵</span>
+            <strong style="font-size:13px;" id="musicTitle">الموسيقى متوقفة</strong>
+            <button class="pill-btn" onclick="toggleMusic()">تشغيل / إيقاف</button>
+          </div>
+        </div>
+        <div class="cc-slider-box">
+          <span>☀️</span>
+          <input type="range" min="30" max="100" value="100" oninput="setBrightness(this.value)">
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button class="cc-circle" id="ccFlash" onclick="toggleFlash()">🔦</button>
+          <button class="cc-circle" onclick="toggleControlCenter();openApp('calc')">🧮</button>
+          <button class="cc-circle" onclick="toggleControlCenter();openApp('photos')">🖼️</button>
+          <button class="cc-circle" onclick="toggleControlCenter();openApp('settings')">⚙️</button>
+        </div>
+      </div>
+      <div class="notif-drawer" id="notifDrawer">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3>مركز الإشعارات</h3>
+          <button class="pill-btn" onclick="toggleNotifDrawer()">إغلاق</button>
+        </div>
+        <div class="notif-list" id="drawerNotifList"></div>
+      </div>
+      <div class="lock-screen" id="lockScreen">
+        <div style="font-size:17px;opacity:0.9;">🔒</div>
+        <div class="lock-date" id="lockDate">الجمعة، 20 نوفمبر</div>
+        <div class="lock-time" id="lockTime">9:41</div>
+        <div class="notif-list" id="lockNotifList"></div>
+        <div class="lock-actions">
+          <button class="lock-round-btn" onclick="toggleFlash()">🔦</button>
+          <button class="unlock-pill" onclick="unlockDevice()">افتح القفل ↑</button>
+          <button class="lock-round-btn" onclick="unlockDevice();openApp('photos')">📷</button>
+        </div>
+      </div>
+      <div class="home-screen">
+        <div class="widget-card">
+          <div>
+            <h3 id="deviceTitle">آيفون أنس</h3>
+            <p id="deviceSub">اضغط على الوقت للإشعارات أو البطارية لمركز التحكم</p>
+          </div>
+          <span style="font-size:26px;">📱</span>
+        </div>
+        <div class="apps-grid" id="appsGrid"></div>
+      </div>
+      <div class="dock" id="dockBar"></div>
+      <div class="app-window" id="appWindow">
+        <div class="app-topbar">
+          <h3 id="winTitle">التطبيق</h3>
+          <button class="pill-btn" onclick="closeApp()">الرئيسية</button>
+        </div>
+        <div id="winBody" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+      <div class="home-bar-zone" onclick="handleHomeGesture()">
+        <div class="home-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultState = {
+      ownerName: "آيفون أنس",
+      wallpaper: "linear-gradient(160deg, #0b3b2c 0%, #051c15 55%, #020806 100%)",
+      apps: [
+        { id: "phone", name: "الهاتف", icon: "📞", bg: "linear-gradient(135deg,#34c759,#1f8a3b)", dock: true },
+        { id: "messages", name: "الرسائل", icon: "💬", bg: "linear-gradient(135deg,#30d158,#198737)", dock: true },
+        { id: "photos", name: "الصور", icon: "🖼️", bg: "linear-gradient(135deg,#ff9f0a,#ff375f)", dock: true },
+        { id: "settings", name: "الإعدادات", icon: "⚙️", bg: "linear-gradient(135deg,#636366,#3a3a3c)", dock: true },
+        { id: "notes", name: "الملاحظات", icon: "📝", bg: "linear-gradient(135deg,#ffd60a,#e69500)", dock: false },
+        { id: "calc", name: "الحاسبة", icon: "🧮", bg: "linear-gradient(135deg,#2c2c2e,#1c1c1e)", dock: false },
+        { id: "lock", name: "قفل الشاشة", icon: "🔒", bg: "linear-gradient(135deg,#0a84ff,#005bb5)", dock: false }
+      ],
+      contacts: [
+        { name: "أحمد", phone: "0501234567" },
+        { name: "إياد", phone: "0559876543" },
+        { name: "حاتم", phone: "0561122334" }
+      ],
+      chats: [
+        { id: 1, contact: "أحمد", messages: [{ from: "them", text: "هلا، جاهز نطلع اليوم؟" }, { from: "me", text: "إي جاهز، عطني 10 دقايق بس." }] },
+        { id: 2, contact: "إياد", messages: [{ from: "them", text: "شيك على التعديلات الجديدة." }] },
+        { id: 3, contact: "حاتم", messages: [{ from: "them", text: "نمرك بعد المغرب؟" }] }
+      ],
+      photos: [],
+      notes: ["مراجعة الدروس", "تخصيص الجوال"],
+      notifications: [
+        { app: "الهاتف", icon: "📞", color: "#30d158", text: "مكالمة فائتة من أحمد", target: "phone" },
+        { app: "الرسائل", icon: "💬", color: "#0a84ff", text: "رسالة جديدة من إياد", target: "messages" }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem("iphone_sim_v3")) || defaultState;
+    if (!Array.isArray(state.chats) || !state.chats.length) state.chats = defaultState.chats;
+    let activeChatId = state.chats[0].id;
+    let flashOn = false;
+    let playingMusic = false;
+
+    function saveState() {
+      localStorage.setItem("iphone_sim_v3", JSON.stringify(state));
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const t = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      document.getElementById("statusTime").textContent = t;
+      document.getElementById("lockTime").textContent = t;
+      document.getElementById("lockDate").textContent = new Intl.DateTimeFormat("ar-SA", {
+        weekday: "long", day: "numeric", month: "long"
+      }).format(now);
+    }
+
+    function renderShell() {
+      document.getElementById("screen").style.background = state.wallpaper;
+      document.getElementById("deviceTitle").textContent = state.ownerName;
+
+      const grid = document.getElementById("appsGrid");
+      const dock = document.getElementById("dockBar");
+      grid.innerHTML = "";
+      dock.innerHTML = "";
+
+      state.apps.forEach(app => {
+        const el = document.createElement("div");
+        el.className = "app-btn";
+        el.onclick = () => app.id === "lock" ? lockDevice() : openApp(app.id);
+        el.innerHTML = `<div class="app-icon" style="background:${app.bg};">${app.icon}</div>${app.dock ? "" : `<span class="app-name">${app.name}</span>`}`;
+        (app.dock ? dock : grid).appendChild(el);
+      });
+
+      const notifHTML = state.notifications.map(n => `
+        <div class="notif-card" onclick="unlockDevice();closeOverlays();openApp('${n.target}')">
+          <div class="notif-icon" style="background:${n.color};">${n.icon}</div>
+          <div class="notif-text"><h4>${n.app}</h4><p>${n.text}</p></div>
+        </div>
+      `).join("");
+
+      document.getElementById("lockNotifList").innerHTML = notifHTML;
+      document.getElementById("drawerNotifList").innerHTML = notifHTML || `<p style="opacity:0.7;text-align:center;">لا توجد إشعارات</p>`;
+    }
+
+    function unlockDevice() { document.getElementById("lockScreen").classList.add("unlocked"); }
+    function lockDevice() { closeOverlays(); closeApp(); document.getElementById("lockScreen").classList.remove("unlocked"); }
+    function closeOverlays() { document.getElementById("controlCenter").classList.remove("open"); document.getElementById("notifDrawer").classList.remove("open"); }
+    function toggleControlCenter() { document.getElementById("notifDrawer").classList.remove("open"); document.getElementById("controlCenter").classList.toggle("open"); }
+    function toggleNotifDrawer() { document.getElementById("controlCenter").classList.remove("open"); document.getElementById("notifDrawer").classList.toggle("open"); }
+
+    function toggleIsland() {
+      const isl = document.getElementById("dynamicIsland");
+      isl.classList.toggle("expanded");
+      document.getElementById("islandLabel").textContent = isl.classList.contains("expanded") ? `${state.ownerName} • متصل` : "آيفون جاهز";
+    }
+
+    function toggleFlash() {
+      flashOn = !flashOn;
+      document.getElementById("ccFlash").classList.toggle("active-orange", flashOn);
+      document.getElementById("screen").style.boxShadow = flashOn ? "inset 0 0 130px rgba(255,255,220,0.6)" : "none";
+      document.getElementById("islandLabel").textContent = flashOn ? "🔦 الكشاف يعمل" : "آيفون جاهز";
+    }
+
+    function toggleMusic() {
+      playingMusic = !playingMusic;
+      document.getElementById("musicTitle").textContent = playingMusic ? "قيد التشغيل الآن 🎶" : "الموسيقى متوقفة";
+    }
+
+    function setBrightness(val) {
+      document.getElementById("brightnessOverlay").style.opacity = (100 - val) / 120;
+    }
+
+    function handleHomeGesture() {
+      if (document.getElementById("controlCenter").classList.contains("open") || document.getElementById("notifDrawer").classList.contains("open")) {
+        closeOverlays();
+      } else if (document.getElementById("appWindow").classList.contains("open")) {
+        closeApp();
+      } else {
+        lockDevice();
+      }
+    }
+
+    function openApp(id) {
+      const win = document.getElementById("appWindow");
+      const title = document.getElementById("winTitle");
+      const body = document.getElementById("winBody");
+      win.classList.add("open");
+
+      if (id === "phone") {
+        title.textContent = "📞 الهاتف وجهات الاتصال";
+        body.innerHTML = `
+          <div class="panel">
+            <input class="field" id="dialInput" placeholder="أدخل رقماً للاتصال...">
+            <button class="action-btn" style="background:var(--green);" onclick="makeCall(document.getElementById('dialInput').value)">اتصال</button>
+            <div id="callBanner" style="font-size:13.5px;color:var(--green);"></div>
+          </div>
+          <div class="panel">
+            <strong>جهات الاتصال</strong>
+            ${state.contacts.map((c, idx) => `
+              <div class="list-row">
+                <div><strong>${c.name}</strong><div style="font-size:12px;opacity:0.75;">${c.phone}</div></div>
+                <div style="display:flex;gap:6px;">
+                  <button class="pill-btn" style="background:var(--green);" onclick="makeCall('${c.name} (${c.phone})')">اتصال</button>
+                  <button class="pill-btn" onclick="deleteContact(${idx})">حذف</button>
+                </div>
+              </div>
+            `).join("")}
+            <input class="field" id="newContactName" placeholder="اسم جهة اتصال جديدة">
+            <input class="field" id="newContactPhone" placeholder="رقم الجوال">
+            <button class="action-btn" onclick="addContact()">+ إضافة جهة اتصال</button>
+          </div>`;
+      } else if (id === "messages") {
+        const chat = state.chats.find(c => c.id === activeChatId) || state.chats[0];
+        activeChatId = chat.id;
+        title.textContent = "💬 الرسائل";
+        body.innerHTML = `
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong>المحادثات (${state.chats.length})</strong>
+              <span style="font-size:12px;opacity:0.75;">اختر محادثة أو أنشئ جديدة</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;max-height:170px;overflow-y:auto;">
+              ${state.chats.map(c => {
+                const lastMsg = c.messages[c.messages.length - 1]?.text || "لا توجد رسائل بعد";
+                const isSelected = c.id === chat.id;
+                return `
+                  <div class="list-row" style="${isSelected ? 'border:1px solid var(--accent);background:rgba(10,132,255,0.16);' : ''}" onclick="activeChatId=${c.id};openApp('messages')">
+                    <div style="flex:1;min-width:0;">
+                      <strong>${c.contact}</strong>
+                      <div style="font-size:12px;opacity:0.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastMsg}</div>
+                    </div>
+                    ${state.chats.length > 1 ? `<button class="pill-btn" onclick="event.stopPropagation();deleteChat(${c.id})">حذف</button>` : ""}
+                  </div>
+                `;
+              }).join("")}
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input class="field" id="newChatName" placeholder="اسم محادثة جديدة...">
+              <button class="pill-btn" style="background:var(--accent);white-space:nowrap;" onclick="addNewChat()">+ محادثة</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong>محادثة: ${chat.contact}</strong>
+              <button class="pill-btn" onclick="renameChat(${chat.id})">تعديل الاسم</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin:8px 0;">
+              ${chat.messages.length ? chat.messages.map((m, i) => `<div class="chat-bubble ${m.from === 'me' ? 'chat-me' : 'chat-them'}" onclick="deleteMessage(${chat.id}, ${i})">${m.text}</div>`).join("") : `<p style="opacity:0.65;font-size:13px;text-align:center;">ابدأ بإرسال رسالة في هذه المحادثة</p>`}
+            </div>
+            <input class="field" id="msgBox" placeholder="اكتب رسالة...">
+            <div style="display:flex;gap:8px;">
+              <button class="action-btn" style="flex:1;" onclick="sendChatMsg(${chat.id}, 'me')">إرسال كـ أنا</button>
+              <button class="pill-btn" onclick="sendChatMsg(${chat.id}, 'them')">رد الطرف الآخر</button>
+            </div>
+          </div>`;
+      } else if (id === "photos") {
+        title.textContent = "🖼️ الصور";
+        body.innerHTML = `
+          <div class="panel">
+            <label class="action-btn" style="text-align:center;display:block;">
+              + إضافة صورة من جهازك
+              <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
+            </label>
+          </div>
+          <div class="photos-grid">
+            ${state.photos.length ? state.photos.map((src, i) => `<div class="photo-tile"><img src="${src}" alt="صورة"><button class="photo-del" onclick="removePhoto(${i})">✕</button></div>`).join("") : `<p style="opacity:0.7;grid-column:span 2;text-align:center;">أضف صوراً من جهازك لعرضها هنا</p>`}
+          </div>`;
+      } else if (id === "notes") {
+        title.textContent = "📝 الملاحظات";
+        body.innerHTML = `
+          <div class="panel">
+            <input class="field" id="noteText" placeholder="اكتب ملاحظة جديدة...">
+            <button class="action-btn" style="background:var(--orange);color:#000;" onclick="addNote()">حفظ الملاحظة</button>
+            ${state.notes.map((n, i) => `<div class="list-row"><span>${n}</span><button class="pill-btn" onclick="deleteNote(${i})">حذف</button></div>`).join("")}
+          </div>`;
+      } else if (id === "calc") {
+        title.textContent = "🧮 الآلة الحاسبة";
+        body.innerHTML = `
+          <div class="panel">
+            <input class="field" id="calcField" placeholder="مثال: (15 + 25) * 2">
+            <button class="action-btn" onclick="runCalc()">احسب النتيجة</button>
+            <div id="calcAns" style="font-size:20px;font-weight:700;"></div>
+          </div>`;
+      } else if (id === "settings") {
+        title.textContent = "⚙️ الإعدادات والتخصيص";
+        body.innerHTML = `
+          <div class="panel">
+            <strong>اسم الجهاز / الشخص</strong>
+            <input class="field" id="setOwner" value="${state.ownerName}">
+            <button class="action-btn" onclick="updateOwner()">حفظ الاسم</button>
+          </div>
+          <div class="panel">
+            <strong>تغيير خلفية الشاشة</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="pill-btn" onclick="setWallpaper('linear-gradient(160deg,#0b3b2c,#020806)')">أخضر</button>
+              <button class="pill-btn" onclick="setWallpaper('linear-gradient(160deg,#1a2a6c,#090d24)')">أزرق</button>
+              <button class="pill-btn" onclick="setWallpaper('linear-gradient(160deg,#5e192d,#140308)')">عنابي</button>
+              <button class="pill-btn" onclick="setWallpaper('linear-gradient(160deg,#3a1c71,#d76d77)')">غروب</button>
+            </div>
+            <label class="pill-btn" style="text-align:center;">
+              اختر صورة خلفية من جهازك
+              <input type="file" accept="image/*" style="display:none;" onchange="uploadWallpaper(event)">
+            </label>
+          </div>
+          <div class="panel">
+            <strong>تخصيص أسماء وأيقونات التطبيقات</strong>
+            ${state.apps.map((a, idx) => `
+              <div class="list-row">
+                <input class="field" style="width:55px;text-align:center;" value="${a.icon}" onchange="editApp(${idx}, 'icon', this.value)">
+                <input class="field" value="${a.name}" onchange="editApp(${idx}, 'name', this.value)">
+              </div>
+            `).join("")}
+          </div>
+          <button class="pill-btn" style="background:var(--red);" onclick="resetAll()">إعادة ضبط المصنع</button>`;
+      }
+    }
+
+    function closeApp() { document.getElementById("appWindow").classList.remove("open"); }
+    function makeCall(t) { if (t) document.getElementById("callBanner").textContent = `📞 جاري الاتصال بـ ${t}...`; }
+
+    function addContact() {
+      const name = document.getElementById("newContactName").value.trim();
+      const phone = document.getElementById("newContactPhone").value.trim();
+      if (!name || !phone) return;
+      state.contacts.push({ name, phone });
+      saveState(); openApp("phone");
+    }
+
+    function deleteContact(i) { state.contacts.splice(i, 1); saveState(); openApp("phone"); }
+
+    function addNewChat() {
+      const inp = document.getElementById("newChatName");
+      const name = inp.value.trim();
+      if (!name) return;
+      const nextId = (state.chats.reduce((max, c) => Math.max(max, c.id), 0) || 0) + 1;
+      state.chats.unshift({ id: nextId, contact: name, messages: [] });
+      activeChatId = nextId;
+      saveState(); openApp("messages");
+    }
+
+    function deleteChat(id) {
+      if (state.chats.length <= 1) return;
+      state.chats = state.chats.filter(c => c.id !== id);
+      if (activeChatId === id) activeChatId = state.chats[0].id;
+      saveState(); openApp("messages");
+    }
+
+    function sendChatMsg(id, sender) {
+      const box = document.getElementById("msgBox");
+      if (!box.value.trim()) return;
+      state.chats.find(c => c.id === id).messages.push({ from: sender, text: box.value.trim() });
+      saveState(); openApp("messages");
+    }
+
+    function renameChat(id) {
+      const chat = state.chats.find(c => c.id === id);
+      const next = prompt("الاسم الجديد:", chat.contact);
+      if (next && next.trim()) { chat.contact = next.trim(); saveState(); openApp("messages"); }
+    }
+
+    function deleteMessage(id, i) { state.chats.find(c => c.id === id).messages.splice(i, 1); saveState(); openApp("messages"); }
+
+    function uploadPhoto(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { state.photos.unshift(r.result); saveState(); openApp("photos"); };
+      r.readAsDataURL(f);
+    }
+
+    function removePhoto(i) { state.photos.splice(i, 1); saveState(); openApp("photos"); }
+
+    function addNote() {
+      const inp = document.getElementById("noteText");
+      if (!inp.value.trim()) return;
+      state.notes.unshift(inp.value.trim());
+      saveState(); openApp("notes");
+    }
+
+    function deleteNote(i) { state.notes.splice(i, 1); saveState(); openApp("notes"); }
+
+    function runCalc() {
+      try {
+        const val = document.getElementById("calcField").value;
+        if (!/^[0-9+\-*/().\s]+$/.test(val)) throw new Error();
+        document.getElementById("calcAns").textContent = `= ${Function(`"use strict"; return (${val})`)()}`;
+      } catch {
+        document.getElementById("calcAns").textContent = "صيغة غير صحيحة";
+      }
+    }
+
+    function updateOwner() { const v = document.getElementById("setOwner").value.trim(); if (v) { state.ownerName = v; saveState(); renderShell(); } }
+    function setWallpaper(bg) { state.wallpaper = bg; saveState(); renderShell(); }
+
+    function uploadWallpaper(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { state.wallpaper = `url('${r.result}')`; saveState(); renderShell(); };
+      r.readAsDataURL(f);
+    }
+
+    function editApp(i, k, v) { if (v.trim()) { state.apps[i][k] = v.trim(); saveState(); renderShell(); } }
+    function resetAll() { localStorage.removeItem("iphone_sim_v2"); localStorage.removeItem("iphone_sim_v3"); location.reload(); }
+
+    updateClock();
+    setInterval(updateClock, 30000);
+    renderShell();
+  </script>
+</body>
+</html>
