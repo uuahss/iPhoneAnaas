@@ -622,6 +622,22 @@
     updateClock();
     setInterval(updateClock, 30000);
     renderShell();
-  </script>
+  </script><script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      el.disabled = true;
+      el.readOnly = true;
+    });
+    document.querySelectorAll("[contenteditable]").forEach(el => {
+      el.setAttribute("contenteditable", "false");
+    });
+    try {
+      Storage.prototype.setItem = function () {};
+      Storage.prototype.removeItem = function () {};
+      Storage.prototype.clear = function () {};
+    } catch (e) {}
+  });
+</script>
+
 </body>
 </html>
