@@ -288,31 +288,31 @@
         { id: "lock", name: "قفل الشاشة", icon: "🔒", bg: "linear-gradient(135deg,#0a84ff,#005bb5)", dock: false }
       ],
       contacts: [
-        { name: "أحمد", phone: "0501234567" },
-        { name: "إياد", phone: "0559876543" },
+        { name: "الوالدة", phone: "0500000001" },
+        { name: "قروب المشرفين", phone: "0550000002" },
         { name: "حاتم", phone: "0561122334" }
       ],
       chats: [
-        { id: 1, contact: "أحمد", messages: [{ from: "them", text: "هلا، جاهز نطلع اليوم؟" }, { from: "me", text: "إي جاهز، عطني 10 دقايق بس." }] },
-        { id: 2, contact: "إياد", messages: [{ from: "them", text: "شيك على التعديلات الجديدة." }] },
+        { id: 1, contact: "قروب المشرفين", messages: [{ from: "them", text: "رسائل من قروب المشرفين: تم اعتماد الجدول الجديد." }, { from: "me", text: "يعطيكم العافية، وصل." }] },
+        { id: 2, contact: "الوالدة", messages: [{ from: "them", text: "اتصال من الوالدة، طمني عليك." }] },
         { id: 3, contact: "حاتم", messages: [{ from: "them", text: "نمرك بعد المغرب؟" }] }
       ],
       photos: [],
       notes: ["مراجعة الدروس", "تخصيص الجوال"],
       notifications: [
-        { app: "الهاتف", icon: "📞", color: "#30d158", text: "مكالمة فائتة من أحمد", target: "phone" },
-        { app: "الرسائل", icon: "💬", color: "#0a84ff", text: "رسالة جديدة من إياد", target: "messages" }
+        { app: "الهاتف", icon: "📞", color: "#30d158", text: "اتصال من الوالدة", target: "phone" },
+        { app: "الرسائل", icon: "💬", color: "#0a84ff", text: "رسائل من قروب المشرفين", target: "messages" }
       ]
     };
 
-    let state = JSON.parse(localStorage.getItem("iphone_sim_v3")) || defaultState;
+    let state = JSON.parse(localStorage.getItem("iphone_sim_v4")) || defaultState;
     if (!Array.isArray(state.chats) || !state.chats.length) state.chats = defaultState.chats;
     let activeChatId = state.chats[0].id;
     let flashOn = false;
     let playingMusic = false;
 
     function saveState() {
-      localStorage.setItem("iphone_sim_v3", JSON.stringify(state));
+      localStorage.setItem("iphone_sim_v4", JSON.stringify(state));
     }
 
     function updateClock() {
@@ -612,7 +612,12 @@
     }
 
     function editApp(i, k, v) { if (v.trim()) { state.apps[i][k] = v.trim(); saveState(); renderShell(); } }
-    function resetAll() { localStorage.removeItem("iphone_sim_v2"); localStorage.removeItem("iphone_sim_v3"); location.reload(); }
+    function resetAll() {
+      localStorage.removeItem("iphone_sim_v2");
+      localStorage.removeItem("iphone_sim_v3");
+      localStorage.removeItem("iphone_sim_v4");
+      location.reload();
+    }
 
     updateClock();
     setInterval(updateClock, 30000);
